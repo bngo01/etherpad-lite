@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb:latest
+    restart: on-failure:5
+    environment:
+      - MYSQL_ROOT_PASSWORD=db_testing123
+    volumes:
+      - db:/var/lib/mysql
+    hostname: mysql
+
+  app:
+    image: etherpad:test
+    restart: on-failure:10
+    ports:
+      - 9001:9001
+    environment:
+      - ETHERPAD_TITLE=Etherpad
+      - ETHERPAD_PORT=9001
+      - ETHERPAD_ADMIN_PASSWORD=testing123
+      - ETHERPAD_ADMIN_USER=admin
+      - ETHERPAD_MAXAGE=3600
+      - ETHERPAD_DB_USER=root
+      - ETHERPAD_DB_PASSWORD=db_testing123
+      - ETHERPAD_DB_NAME=mariadb
+      - MYSQL_PORT_3306_TCP_ADDR=mysql
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - db
+
+volumes:
+  db:
