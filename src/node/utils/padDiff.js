@@ -1,8 +1,5 @@
 'use strict';
-
-const AttributeMap = require('../../static/js/AttributeMap');
 const Changeset = require('../../static/js/Changeset');
-const attributes = require('../../static/js/attributes');
 const exportHtml = require('./ExportHtml');
 
 function PadDiff(pad, fromRev, toRev) {
@@ -35,10 +32,16 @@ PadDiff.prototype._isClearAuthorship = function (changeset) {
     return false;
   }
 
-  const [clearOperator, anotherOp] = Changeset.deserializeOps(unpacked.ops);
+  // lets iterator over the operators
+  const iterator = Changeset.opIterator(unpacked.ops);
+
+  // get the first operator, this should be a clear operator
+  const clearOperator = iterator.next();
 
   // check if there is only one operator
-  if (anotherOp != null) return false;
+  if (iterator.hasNext() === true) {
+    return false;
+  }
 
   // check if this operator doesn't change text
   if (clearOperator.opcode !== '=') {
@@ -51,11 +54,17 @@ PadDiff.prototype._isClearAuthorship = function (changeset) {
     return false;
   }
 
-  const [appliedAttribute, anotherAttribute] =
-      attributes.attribsFromString(clearOperator.attribs, this._pad.pool);
+  const attributes = [];
+  Changeset.eachAttribNumber(changeset, (attrNum) => {
+    attributes.push(attrNum);
+  });
 
-  // Check that the operation has exactly one attribute.
-  if (appliedAttribute == null || anotherAttribute != null) return false;
+  // check that this changeset uses only one attribute
+  if (attributes.length !== 1) {
+    return false;
+  }
+
+  const appliedAttribute = this._pad.pool.getAttrib(attributes[0]);
 
   // check if the applied attribute is an anonymous author attribute
   if (appliedAttribute[0] !== 'author' || appliedAttribute[1] !== '') {
@@ -206,6 +215,7 @@ PadDiff.prototype._extendChangesetWithAuthor = (changeset, author, apool) => {
   // unpack
   const unpacked = Changeset.unpack(changeset);
 
+  const iterator = Changeset.opIterator(unpacked.ops);
   const assem = Changeset.opAssembler();
 
   // create deleted attribs
@@ -213,7 +223,10 @@ PadDiff.prototype._extendChangesetWithAuthor = (changeset, author, apool) => {
   const deletedAttrib = apool.putAttrib(['removed', true]);
   const attribs = `*${Changeset.numToString(authorAttrib)}*${Changeset.numToString(deletedAttrib)}`;
 
-  for (const operator of Changeset.deserializeOps(unpacked.ops)) {
+  // iteratore over the operators of the changeset
+  while (iterator.hasNext()) {
+    const operator = iterator.next();
+
     if (operator.opcode === '-') {
       // this is a delete operator, extend it with the author
       operator.attribs = attribs;
@@ -258,23 +271,22 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
 
   let curLine = 0;
   let curChar = 0;
-  let curLineOps = null;
-  let curLineOpsNext = null;
-  let curLineOpsLine;
-  let curLineNextOp = new Changeset.Op('+');
+  let curLineOpIter = null;
+  let curLineOpIterLine;
+  let curLineNextOp = Changeset.newOp('+');
 
   const unpacked = Changeset.unpack(cs);
+  const csIter = Changeset.opIterator(unpacked.ops);
   const builder = Changeset.builder(unpacked.newLen);
 
   const consumeAttribRuns = (numChars, func /* (len, attribs, endsLine)*/) => {
-    if (!curLineOps || curLineOpsLine !== curLine) {
-      curLineOps = Changeset.deserializeOps(aLinesGet(curLine));
-      curLineOpsNext = curLineOps.next();
-      curLineOpsLine = curLine;
+    if ((!curLineOpIter) || (curLineOpIterLine !== curLine)) {
+      // create curLineOpIter and advance it to curChar
+      curLineOpIter = Changeset.opIterator(aLinesGet(curLine));
+      curLineOpIterLine = curLine;
       let indexIntoLine = 0;
-      while (!curLineOpsNext.done) {
-        curLineNextOp = curLineOpsNext.value;
-        curLineOpsNext = curLineOps.next();
+      while (curLineOpIter.hasNext()) {
+        curLineNextOp = curLineOpIter.next();
         if (indexIntoLine + curLineNextOp.chars >= curChar) {
           curLineNextOp.chars -= (curChar - indexIntoLine);
           break;
@@ -284,22 +296,16 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
     }
 
     while (numChars > 0) {
-      if (!curLineNextOp.chars && curLineOpsNext.done) {
+      if ((!curLineNextOp.chars) && (!curLineOpIter.hasNext())) {
         curLine++;
         curChar = 0;
-        curLineOpsLine = curLine;
+        curLineOpIterLine = curLine;
         curLineNextOp.chars = 0;
-        curLineOps = Changeset.deserializeOps(aLinesGet(curLine));
-        curLineOpsNext = curLineOps.next();
+        curLineOpIter = Changeset.opIterator(aLinesGet(curLine));
       }
 
       if (!curLineNextOp.chars) {
-        if (curLineOpsNext.done) {
-          curLineNextOp = new Changeset.Op();
-        } else {
-          curLineNextOp = curLineOpsNext.value;
-          curLineOpsNext = curLineOps.next();
-        }
+        curLineNextOp = curLineOpIter.hasNext() ? curLineOpIter.next() : Changeset.newOp();
       }
 
       const charsToUse = Math.min(numChars, curLineNextOp.chars);
@@ -311,7 +317,7 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
       curChar += charsToUse;
     }
 
-    if (!curLineNextOp.chars && curLineOpsNext.done) {
+    if ((!curLineNextOp.chars) && (!curLineOpIter.hasNext())) {
       curLine++;
       curChar = 0;
     }
@@ -321,7 +327,7 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
     if (L) {
       curLine += L;
       curChar = 0;
-    } else if (curLineOps && curLineOpsLine === curLine) {
+    } else if (curLineOpIter && curLineOpIterLine === curLine) {
       consumeAttribRuns(N, () => {});
     } else {
       curChar += N;
@@ -358,7 +364,13 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
     };
   };
 
-  for (const csOp of Changeset.deserializeOps(unpacked.ops)) {
+  const attribKeys = [];
+  const attribValues = [];
+
+  // iterate over all operators of this changeset
+  while (csIter.hasNext()) {
+    const csOp = csIter.next();
+
     if (csOp.opcode === '=') {
       const textBank = nextText(csOp.chars);
 
@@ -367,20 +379,37 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
       // If the text this operator applies to is only a star,
       // than this is a false positive and should be ignored
       if (csOp.attribs && textBank !== '*') {
-        const attribs = AttributeMap.fromString(csOp.attribs, apool);
-        const undoBackToAttribs = cachedStrFunc((oldAttribsStr) => {
-          const oldAttribs = AttributeMap.fromString(oldAttribsStr, apool);
-          const backAttribs = new AttributeMap(apool)
-              .set('author', '')
-              .set('removed', 'true');
-          for (const [key, value] of attribs) {
-            const oldValue = oldAttribs.get(key);
-            if (oldValue !== value) backAttribs.set(key, oldValue);
+        const deletedAttrib = apool.putAttrib(['removed', true]);
+        let authorAttrib = apool.putAttrib(['author', '']);
+
+        attribKeys.length = 0;
+        attribValues.length = 0;
+        Changeset.eachAttribNumber(csOp.attribs, (n) => {
+          attribKeys.push(apool.getAttribKey(n));
+          attribValues.push(apool.getAttribValue(n));
+
+          if (apool.getAttribKey(n) === 'author') {
+            authorAttrib = n;
           }
-          // TODO: backAttribs does not restore removed attributes (it is missing attributes that
-          // are in oldAttribs but not in attribs). I don't know if that is intentional.
-          return backAttribs.toString();
         });
+
+        const undoBackToAttribs = cachedStrFunc((attribs) => {
+          const backAttribs = [];
+          for (let i = 0; i < attribKeys.length; i++) {
+            const appliedKey = attribKeys[i];
+            const appliedValue = attribValues[i];
+            const oldValue = Changeset.attribsAttributeValue(attribs, appliedKey, apool);
+
+            if (appliedValue !== oldValue) {
+              backAttribs.push([appliedKey, oldValue]);
+            }
+          }
+
+          return Changeset.makeAttribsString('=', backAttribs, apool);
+        });
+
+        const oldAttribsAddition =
+            `*${Changeset.numToString(deletedAttrib)}*${Changeset.numToString(authorAttrib)}`;
 
         let textLeftToProcess = textBank;
 
@@ -414,7 +443,7 @@ PadDiff.prototype._createDeletionChangeset = function (cs, startAText, apool) {
             let textBankIndex = 0;
             consumeAttribRuns(lengthToProcess, (len, attribs, endsLine) => {
               // get the old attributes back
-              const oldAttribs = undoBackToAttribs(attribs);
+              const oldAttribs = (undoBackToAttribs(attribs) || '') + oldAttribsAddition;
 
               builder.insert(processText.substr(textBankIndex, len), oldAttribs);
               textBankIndex += len;

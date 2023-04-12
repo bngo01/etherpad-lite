@@ -28,14 +28,14 @@ const getTar = async () => {
   return tar;
 };
 
-exports.expressPreSession = async (hookName, {app}) => {
+exports.expressCreateServer = async (hookName, args) => {
   // Cache both minified and static.
   const assetCache = new CachingMiddleware();
-  app.all(/\/javascripts\/(.*)/, assetCache.handle.bind(assetCache));
+  args.app.all(/\/javascripts\/(.*)/, assetCache.handle.bind(assetCache));
 
   // Minify will serve static files compressed (minify enabled). It also has
   // file-specific hacks for ace/require-kernel/etc.
-  app.all('/static/:filename(*)', minify.minify);
+  args.app.all('/static/:filename(*)', minify.minify);
 
   // Setup middleware that will package JavaScript files served by minify for
   // CommonJS loader on the client-side.
@@ -53,12 +53,12 @@ exports.expressPreSession = async (hookName, {app}) => {
   const associator = new StaticAssociator(associations);
   jsServer.setAssociator(associator);
 
-  app.use(jsServer.handle.bind(jsServer));
+  args.app.use(jsServer.handle.bind(jsServer));
 
   // serve plugin definitions
   // not very static, but served here so that client can do
   // require("pluginfw/static/js/plugin-definitions.js");
-  app.get('/pluginfw/plugin-definitions.json', (req, res, next) => {
+  args.app.get('/pluginfw/plugin-definitions.json', (req, res, next) => {
     const clientParts = plugins.parts.filter((part) => part.client_hooks != null);
     const clientPlugins = {};
     for (const name of new Set(clientParts.map((part) => part.plugin))) {

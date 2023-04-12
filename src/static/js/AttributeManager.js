@@ -1,9 +1,7 @@
 'use strict';
 
-const AttributeMap = require('./AttributeMap');
 const Changeset = require('./Changeset');
 const ChangesetUtils = require('./ChangesetUtils');
-const attributes = require('./attributes');
 const _ = require('./underscore');
 
 const lineMarkerAttribute = 'lmkr';
@@ -149,10 +147,13 @@ AttributeManager.prototype = _(AttributeManager.prototype).extend({
   getAttributeOnLine(lineNum, attributeName) {
     // get  `attributeName` attribute of first char of line
     const aline = this.rep.alines[lineNum];
-    if (!aline) return '';
-    const [op] = Changeset.deserializeOps(aline);
-    if (op == null) return '';
-    return AttributeMap.fromString(op.attribs, this.rep.apool).get(attributeName) || '';
+    if (aline) {
+      const opIter = Changeset.opIterator(aline);
+      if (opIter.hasNext()) {
+        return Changeset.opAttributeValue(opIter.next(), attributeName, this.rep.apool) || '';
+      }
+    }
+    return '';
   },
 
   /*
@@ -162,10 +163,21 @@ AttributeManager.prototype = _(AttributeManager.prototype).extend({
   getAttributesOnLine(lineNum) {
     // get attributes of first char of line
     const aline = this.rep.alines[lineNum];
-    if (!aline) return [];
-    const [op] = Changeset.deserializeOps(aline);
-    if (op == null) return [];
-    return [...attributes.attribsFromString(op.attribs, this.rep.apool)];
+    const attributes = [];
+    if (aline) {
+      const opIter = Changeset.opIterator(aline);
+      let op;
+      if (opIter.hasNext()) {
+        op = opIter.next();
+        if (!op.attribs) return [];
+
+        Changeset.eachAttribNumber(op.attribs, (n) => {
+          attributes.push([this.rep.apool.getAttribKey(n), this.rep.apool.getAttribValue(n)]);
+        });
+        return attributes;
+      }
+    }
+    return [];
   },
 
   /*
@@ -189,7 +201,9 @@ AttributeManager.prototype = _(AttributeManager.prototype).extend({
       }
     }
 
-    const withIt = new AttributeMap(rep.apool).set(attributeName, 'true').toString();
+    const withIt = Changeset.makeAttribsString('+', [
+      [attributeName, 'true'],
+    ], rep.apool);
     const withItRegex = new RegExp(`${withIt.replace(/\*/g, '\\*')}(\\*|$)`);
     const hasIt = (attribs) => withItRegex.test(attribs);
 
@@ -220,8 +234,13 @@ AttributeManager.prototype = _(AttributeManager.prototype).extend({
       const end = selEnd[1];
       let hasAttrib = true;
 
+      // Iterate over attribs on this line
+
+      const opIter = Changeset.opIterator(rep.alines[lineNum]);
       let indexIntoLine = 0;
-      for (const op of Changeset.deserializeOps(rep.alines[lineNum])) {
+
+      while (opIter.hasNext()) {
+        const op = opIter.next();
         const opStartInLine = indexIntoLine;
         const opEndInLine = opStartInLine + op.chars;
         if (!hasIt(op.attribs)) {
@@ -254,16 +273,32 @@ AttributeManager.prototype = _(AttributeManager.prototype).extend({
     if (!aline) {
       return [];
     }
+    // iterate through all operations of a line
+    const opIter = Changeset.opIterator(aline);
 
     // we need to sum up how much characters each operations take until the wanted position
     let currentPointer = 0;
+    const attributes = [];
+    let currentOperation;
 
-    for (const currentOperation of Changeset.deserializeOps(aline)) {
+    while (opIter.hasNext()) {
+      currentOperation = opIter.next();
       currentPointer += currentOperation.chars;
-      if (currentPointer <= column) continue;
-      return [...attributes.attribsFromString(currentOperation.attribs, this.rep.apool)];
+
+      if (currentPointer > column) {
+        // we got the operation of the wanted position, now collect all its attributes
+        Changeset.eachAttribNumber(currentOperation.attribs, (n) => {
+          attributes.push([
+            this.rep.apool.getAttribKey(n),
+            this.rep.apool.getAttribValue(n),
+          ]);
+        });
+
+        // skip the loop
+        return attributes;
+      }
     }
-    return [];
+    return attributes;
   },
 
   /*

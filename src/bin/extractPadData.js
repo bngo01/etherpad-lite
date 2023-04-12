@@ -30,7 +30,9 @@ const padId = process.argv[2];
   // initialize output database
   const dirty = dirtyDB(`${padId}.db`);
 
-  // Promise set function
+  // Promise wrapped get and set function
+  const wrapped = db.db.db.wrappedDB;
+  const get = util.promisify(wrapped.get.bind(wrapped));
   const set = util.promisify(dirty.set.bind(dirty));
 
   // array in which required key values will be accumulated
@@ -53,7 +55,7 @@ const padId = process.argv[2];
   }
 
   for (const dbkey of neededDBValues) {
-    let dbvalue = await db.get(dbkey);
+    let dbvalue = await get(dbkey);
     if (dbvalue && typeof dbvalue !== 'object') {
       dbvalue = JSON.parse(dbvalue);
     }

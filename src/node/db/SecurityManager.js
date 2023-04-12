@@ -28,7 +28,6 @@ const settings = require('../utils/Settings');
 const webaccess = require('../hooks/express/webaccess');
 const log4js = require('log4js');
 const authLogger = log4js.getLogger('auth');
-const {padutils} = require('../../static/js/pad_utils');
 
 const DENY = Object.freeze({accessStatus: 'deny'});
 
@@ -96,26 +95,26 @@ exports.checkAccess = async (padID, sessionCookie, token, userSettings) => {
     return DENY;
   }
 
-  const padExists = await padManager.doesPadExist(padID);
+  // start fetching the info we may need
+  const p_sessionAuthorID = sessionManager.findAuthorID(padID.split('$')[0], sessionCookie);
+  const p_tokenAuthorID = authorManager.getAuthor4Token(token);
+  const p_padExists = padManager.doesPadExist(padID);
+
+  const padExists = await p_padExists;
   if (!padExists && !canCreate) {
     authLogger.debug('access denied: user attempted to create a pad, which is prohibited');
     return DENY;
   }
 
-  const sessionAuthorID = await sessionManager.findAuthorID(padID.split('$')[0], sessionCookie);
+  const sessionAuthorID = await p_sessionAuthorID;
   if (settings.requireSession && !sessionAuthorID) {
     authLogger.debug('access denied: HTTP API session is required');
-    return DENY;
-  }
-  if (!sessionAuthorID && token != null && !padutils.isValidAuthorToken(token)) {
-    // The author token should be kept secret, so do not log it.
-    authLogger.debug('access denied: invalid author token');
     return DENY;
   }
 
   const grant = {
     accessStatus: 'grant',
-    authorID: sessionAuthorID || await authorManager.getAuthorId(token, userSettings),
+    authorID: (sessionAuthorID != null) ? sessionAuthorID : await p_tokenAuthorID,
   };
 
   if (!padID.includes('$')) {

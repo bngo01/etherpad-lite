@@ -21,16 +21,10 @@ node src/bin/plugins/checkPlugin.js ep_webrtc
 node src/bin/plugins/checkPlugin.js ep_whatever autofix
 ```
 
-## Autocommitting - fix issues and commit
+## Autocommitting, push, npm minor patch and npm publish (highly dangerous)
 
 ```
 node src/bin/plugins/checkPlugin.js ep_whatever autocommit
-```
-
-## Autopush - fix issues, commit, push, and publish (highly dangerous)
-
-```
-node src/bin/plugins/checkPlugin.js ep_whatever autopush
 ```
 
 # All the plugins

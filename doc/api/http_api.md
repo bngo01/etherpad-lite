@@ -65,7 +65,7 @@ Portal submits content into new blog post
 ## Usage
 
 ### API version
-The latest version is `1.2.15`
+The latest version is `1.2.14`
 
 The current version can be queried via /api.
 
@@ -173,15 +173,14 @@ returns all pads of this group
   * `{code: 0, message:"ok", data: {padIDs : ["g.s8oes9dhwrvt0zif$test", "g.s8oes9dhwrvt0zif$test2"]}`
   * `{code: 1, message:"groupID does not exist", data: null}`
 
-#### createGroupPad(groupID, padName, [text], [authorId])
+#### createGroupPad(groupID, padName [, text])
  * API >= 1
- * `authorId` in API >= 1.3.0
 
 creates a new pad in this group
 
 *Example returns:*
-  * `{code: 0, message:"ok", data: {padID: "g.s8oes9dhwrvt0zif$test"}`
-  * `{code: 1, message:"padName does already exist", data: null}`
+  * `{code: 0, message:"ok", data: null}`
+  * `{code: 1, message:"pad does already exist", data: null}`
   * `{code: 1, message:"groupID does not exist", data: null}`
 
 #### listAllGroups()
@@ -294,9 +293,8 @@ returns the text of a pad
   * `{code: 0, message:"ok", data: {text:"Welcome Text"}}`
   * `{code: 1, message:"padID does not exist", data: null}`
 
-#### setText(padID, text, [authorId])
+#### setText(padID, text)
  * API >= 1
- * `authorId` in API >= 1.3.0
 
 Sets the text of a pad.
 
@@ -307,9 +305,8 @@ If your text is long (>8 KB), please invoke via POST and include `text` paramete
   * `{code: 1, message:"padID does not exist", data: null}`
   * `{code: 1, message:"text too long", data: null}`
 
-#### appendText(padID, text, [authorId])
+#### appendText(padID, text)
  * API >= 1.2.13
- * `authorId` in API >= 1.3.0
 
 Appends text to a pad.
 
@@ -329,9 +326,8 @@ returns the text of a pad formatted as HTML
   * `{code: 0, message:"ok", data: {html:"Welcome Text<br>More Text"}}`
   * `{code: 1, message:"padID does not exist", data: null}`
 
-#### setHTML(padID, html, [authorId])
+#### setHTML(padID, html)
  * API >= 1
- * `authorId` in API >= 1.3.0
 
 sets the text of a pad based on HTML, HTML must be well-formed. Malformed HTML will send a warning to the API log.
 
@@ -391,9 +387,8 @@ returns an object of diffs from 2 points in a pad
   * `{"code":0,"message":"ok","data":{"html":"<style>\n.authora_HKIv23mEbachFYfH {background-color: #a979d9}\n.authora_n4gEeMLsv1GivNeh {background-color: #a9b5d9}\n.removed {text-decoration: line-through; -ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=80)'; filter: alpha(opacity=80); opacity: 0.8; }\n</style>Welcome to Etherpad!<br><br>This pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!<br><br>Get involved with Etherpad at <a href=\"http&#x3a;&#x2F;&#x2F;etherpad&#x2e;org\">http:&#x2F;&#x2F;etherpad.org</a><br><span class=\"authora_HKIv23mEbachFYfH\">aw</span><br><br>","authors":["a.HKIv23mEbachFYfH",""]}}`
   * `{"code":4,"message":"no or wrong API Key","data":null}`
 
-#### restoreRevision(padId, rev, [authorId])
+#### restoreRevision(padId, rev)
  * API >= 1.2.11
- * `authorId` in API >= 1.3.0
 
 Restores revision from past as new changeset
 
@@ -442,9 +437,8 @@ creates a chat message, saves it to the database and sends it to all connected c
 ### Pad
 Group pads are normal pads, but with the name schema GROUPID$PADNAME. A security manager controls access of them and it's forbidden for normal pads to include a $ in the name.
 
-#### createPad(padID, [text], [authorId])
+#### createPad(padID [, text])
  * API >= 1
- * `authorId` in API >= 1.3.0
 
 creates a new (non-group) pad.  Note that if you need to create a group Pad, you should call **createGroupPad**.
 You get an error message if you use one of the following characters in the padID: "/", "?", "&" or "#".
@@ -525,9 +519,8 @@ copies a pad with full history and chat. If force is true and the destination pa
   * `{code: 0, message:"ok", data: null}`
   * `{code: 1, message:"padID does not exist", data: null}`
 
-#### copyPadWithoutHistory(sourceID, destinationID, [force=false], [authorId])
+#### copyPadWithoutHistory(sourceID, destinationID[, force=false])
 * API >= 1.2.15
- * `authorId` in API >= 1.3.0
 
 copies a pad without copying the history and chat. If force is true and the destination pad exists, it will be overwritten.
 Note that all the revisions will be lost! In most of the cases one should use `copyPad` API instead.
@@ -566,12 +559,11 @@ returns the id of a pad which is assigned to the readOnlyID
 #### setPublicStatus(padID, publicStatus)
  * API >= 1
 
-sets a boolean for the public status of a group pad
+sets a boolean for the public status of a pad
 
 *Example returns:*
   * `{code: 0, message:"ok", data: null}`
   * `{code: 1, message:"padID does not exist", data: null}`
-  * `{code: 1, message:"You can only get/set the publicStatus of pads that belong to a group", data: null}`
 
 #### getPublicStatus(padID)
  * API >= 1
@@ -581,7 +573,6 @@ return true of false
 *Example returns:*
   * `{code: 0, message:"ok", data: {publicStatus: true}}`
   * `{code: 1, message:"padID does not exist", data: null}`
-  * `{code: 1, message:"You can only get/set the publicStatus of pads that belong to a group", data: null}`
 
 #### listAuthorsOfPad(padID)
  * API >= 1

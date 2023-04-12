@@ -2,7 +2,6 @@
 	"@metadata": {
 		"authors": [
 			"Akapochtli",
-			"Languaeditor",
 			"Taresi"
 		]
 	},
@@ -16,7 +15,7 @@
 	"pad.toolbar.redo.title": "Occeppa (Ctrl+Y)",
 	"pad.toolbar.settings.title": "Tlatlālīliztli",
 	"pad.colorpicker.save": "Xicpiya",
-	"pad.colorpicker.cancel": "Xikxolewa",
+	"pad.colorpicker.cancel": "Moxitiniz",
 	"pad.settings.padSettings": "Pad Ītlatlālīliz",
 	"pad.settings.myView": "Notlachiyaliz",
 	"pad.settings.language": "Tlahtolli:",
@@ -25,20 +24,20 @@
 	"pad.importExport.exportword": "Microsoft Word",
 	"pad.importExport.exportpdf": "PDF",
 	"pad.importExport.exportopen": "ODF (Open Document Format)",
-	"pad.modals.cancel": "Xikxolewa",
+	"pad.modals.cancel": "Moxitiniz",
 	"pad.modals.deleted": "Omopohpoloh.",
 	"pad.modals.deleted.explanation": "Ōmopoloh inīn Pad.",
 	"timeslider.version": "Inīc {{version}} Cuepaliztli",
-	"timeslider.month.january": "Eneroh",
-	"timeslider.month.february": "Febreroh",
-	"timeslider.month.march": "Marsoh",
-	"timeslider.month.april": "April",
-	"timeslider.month.may": "Mayoh",
-	"timeslider.month.june": "Honioh",
-	"timeslider.month.july": "Holioh",
-	"timeslider.month.august": "Ahostoh",
-	"timeslider.month.september": "Septiempreh",
-	"timeslider.month.october": "Oktopreh",
-	"timeslider.month.november": "Noviempreh",
-	"timeslider.month.december": "Tisiempreh"
+	"timeslider.month.january": "Īccēmētztli",
+	"timeslider.month.february": "Īcōmemētztli",
+	"timeslider.month.march": "Īcyēyimētztli",
+	"timeslider.month.april": "Īcnāhuimētztli",
+	"timeslider.month.may": "Īcmācuīllimētztli",
+	"timeslider.month.june": "Īcchicuacemmētztli",
+	"timeslider.month.july": "Īcchicōmemētztli",
+	"timeslider.month.august": "Īcchicuēyimētztli",
+	"timeslider.month.september": "Īcchiucnāhuimētztli",
+	"timeslider.month.october": "Īcmahtlactlimētztli",
+	"timeslider.month.november": "Īcmahtlactlioncēmētztli",
+	"timeslider.month.december": "Īcmahtlactliomōmemētztli"
 }

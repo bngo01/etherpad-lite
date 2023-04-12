@@ -21,8 +21,7 @@
 
 const db = require('./DB');
 const CustomError = require('../utils/customError');
-const hooks = require('../../static/js/pluginfw/hooks.js');
-const {randomString, padutils: {warnDeprecated}} = require('../../static/js/pad_utils');
+const randomString = require('../../static/js/pad_utils').randomString;
 
 exports.getColorPalette = () => [
   '#ffc7c7',
@@ -103,30 +102,15 @@ exports.doesAuthorExist = async (authorID) => {
 /* exported for backwards compatibility */
 exports.doesAuthorExists = exports.doesAuthorExist;
 
-const getAuthor4Token = async (token) => {
+/**
+ * Returns the AuthorID for a token.
+ * @param {String} token The token
+ */
+exports.getAuthor4Token = async (token) => {
   const author = await mapAuthorWithDBKey('token2author', token);
 
   // return only the sub value authorID
   return author ? author.authorID : author;
-};
-
-exports.getAuthorId = async (token, user) => {
-  const context = {dbKey: token, token, user};
-  let [authorId] = await hooks.aCallFirst('getAuthorId', context);
-  if (!authorId) authorId = await getAuthor4Token(context.dbKey);
-  return authorId;
-};
-
-/**
- * Returns the AuthorID for a token.
- *
- * @deprecated Use `getAuthorId` instead.
- * @param {String} token The token
- */
-exports.getAuthor4Token = async (token) => {
-  warnDeprecated(
-      'AuthorManager.getAuthor4Token() is deprecated; use AuthorManager.getAuthorId() instead');
-  return await getAuthor4Token(token);
 };
 
 /**

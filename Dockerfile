@@ -4,15 +4,8 @@
 #
 # Author: muxator
 
-FROM node:lts-slim
+FROM node:14-buster-slim
 LABEL maintainer="Etherpad team, https://github.com/ether/etherpad-lite"
-
-ARG TIMEZONE=
-RUN \
-  [ -z "${TIMEZONE}" ] || { \
-    ln -sf /usr/share/zoneinfo/"${TIMEZONE#/usr/share/zoneinfo/}" /etc/localtime; \
-    dpkg-reconfigure -f noninteractive tzdata; \
-  }
 
 # plugins to install while building the container. By default no plugins are
 # installed.
@@ -20,7 +13,7 @@ RUN \
 #
 # EXAMPLE:
 #   ETHERPAD_PLUGINS="ep_codepad ep_author_neat"
-ARG ETHERPAD_PLUGINS= "ep_adminpads2 ep_headings2"
+ARG ETHERPAD_PLUGINS=
 
 # Control whether abiword will be installed, enabling exports to DOC/PDF/ODT formats.
 # By default, it is not installed.
@@ -41,7 +34,7 @@ ARG INSTALL_SOFFICE=
 # By default, Etherpad container is built and run in "production" mode. This is
 # leaner (development dependencies are not installed) and runs faster (among
 # other things, assets are minified & compressed).
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 
 # Follow the principle of least privilege: run as unprivileged user.
 #
@@ -67,10 +60,10 @@ RUN mkdir -p "${EP_DIR}" && chown etherpad:etherpad "${EP_DIR}"
 RUN export DEBIAN_FRONTEND=noninteractive; \
     mkdir -p /usr/share/man/man1 && \
     apt-get -qq update && \
-    apt-get -qq dist-upgrade && \
     apt-get -qq --no-install-recommends install \
         ca-certificates \
         git \
+        curl \
         ${INSTALL_ABIWORD:+abiword} \
         ${INSTALL_SOFFICE:+libreoffice} \
         && \
@@ -92,7 +85,7 @@ COPY --chown=etherpad:etherpad ./ ./
 # seems to confuse tools such as `npm outdated`, `npm update`, and some ESLint
 # rules.
 RUN { [ -z "${ETHERPAD_PLUGINS}" ] || \
-      npm install --no-save --legacy-peer-deps ${ETHERPAD_PLUGINS}; } && \
+      npm install --no-save ${ETHERPAD_PLUGINS}; } && \
     src/bin/installDeps.sh && \
     rm -rf ~/.npm
 
@@ -102,13 +95,7 @@ COPY --chown=etherpad:etherpad ./settings.json.docker "${EP_DIR}"/settings.json
 # Fix group permissions
 RUN chmod -R g=u .
 
-USER root
-RUN cd src && npm link
-USER etherpad
-
-HEALTHCHECK --interval=20s --timeout=3s CMD ["etherpad-healthcheck"]
-
-COPY installDeps.sh /opt/etherpad-lite/src/bin
+HEALTHCHECK --interval=20s --timeout=3s CMD curl -f http://localhost:9001 || exit 1
 
 EXPOSE 9001
-CMD ["etherpad"]
+CMD ["node", "src/node/server.js"]

@@ -100,13 +100,13 @@ const generateLocaleIndex = (locales) => {
 };
 
 
-exports.expressPreSession = async (hookName, {app}) => {
+exports.expressCreateServer = (n, args, cb) => {
   // regenerate locales on server restart
   const locales = getAllLocales();
   const localeIndex = generateLocaleIndex(locales);
   exports.availableLangs = getAvailableLangs(locales);
 
-  app.get('/locales/:locale', (req, res) => {
+  args.app.get('/locales/:locale', (req, res) => {
     // works with /locale/en and /locale/en.json requests
     const locale = req.params.locale.split('.')[0];
     if (Object.prototype.hasOwnProperty.call(exports.availableLangs, locale)) {
@@ -118,9 +118,11 @@ exports.expressPreSession = async (hookName, {app}) => {
     }
   });
 
-  app.get('/locales.json', (req, res) => {
+  args.app.get('/locales.json', (req, res) => {
     res.setHeader('Cache-Control', `public, max-age=${settings.maxAge}`);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.send(localeIndex);
   });
+
+  return cb();
 };

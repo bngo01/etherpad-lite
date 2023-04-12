@@ -23,7 +23,7 @@
     {
       "name": "static",
       "hooks": {
-        "expressPreSession": "ep_etherpad-lite/node/hooks/express/static"
+        "expressCreateServer": "ep_etherpad-lite/node/hooks/express/static"
       }
     },
     {
@@ -35,14 +35,13 @@
     {
       "name": "i18n",
       "hooks": {
-        "expressPreSession": "ep_etherpad-lite/node/hooks/i18n"
+        "expressCreateServer": "ep_etherpad-lite/node/hooks/i18n"
       }
     },
     {
       "name": "specialpages",
       "hooks": {
-        "expressCreateServer": "ep_etherpad-lite/node/hooks/express/specialpages",
-        "expressPreSession": "ep_etherpad-lite/node/hooks/express/specialpages"
+        "expressCreateServer": "ep_etherpad-lite/node/hooks/express/specialpages"
       }
     },
     {
@@ -52,9 +51,15 @@
       }
     },
     {
+      "name": "webaccess",
+      "hooks": {
+        "expressConfigure": "ep_etherpad-lite/node/hooks/express/webaccess"
+      }
+    },
+    {
       "name": "apicalls",
       "hooks": {
-        "expressPreSession": "ep_etherpad-lite/node/hooks/express/apicalls"
+        "expressCreateServer": "ep_etherpad-lite/node/hooks/express/apicalls"
       }
     },
     {
@@ -80,7 +85,7 @@
     {
       "name": "tests",
       "hooks": {
-        "expressPreSession": "ep_etherpad-lite/node/hooks/express/tests"
+        "expressCreateServer": "ep_etherpad-lite/node/hooks/express/tests"
       }
     },
     {
@@ -106,7 +111,7 @@
     {
       "name": "openapi",
       "hooks": {
-        "expressPreSession": "ep_etherpad-lite/node/hooks/express/openapi"
+        "expressCreateServer": "ep_etherpad-lite/node/hooks/express/openapi"
       }
     }
   ]

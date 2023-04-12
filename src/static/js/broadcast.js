@@ -26,7 +26,6 @@ const makeCSSManager = require('./cssmanager').makeCSSManager;
 const domline = require('./domline').domline;
 const AttribPool = require('./AttributePool');
 const Changeset = require('./Changeset');
-const attributes = require('./attributes');
 const linestylefilter = require('./linestylefilter').linestylefilter;
 const colorutils = require('./colorutils').colorutils;
 const _ = require('./underscore');
@@ -115,16 +114,24 @@ const loadBroadcastJS = (socket, sendSocketMsg, fireWhenAllScriptsAreLoaded, Bro
     },
 
     getActiveAuthors() {
-      const authorIds = new Set();
-      for (const aline of this.alines) {
-        for (const op of Changeset.deserializeOps(aline)) {
-          for (const [k, v] of attributes.attribsFromString(op.attribs, this.apool)) {
-            if (k !== 'author') continue;
-            if (v) authorIds.add(v);
+      const authors = [];
+      const seenNums = {};
+      const alines = this.alines;
+      for (let i = 0; i < alines.length; i++) {
+        Changeset.eachAttribNumber(alines[i], (n) => {
+          if (!seenNums[n]) {
+            seenNums[n] = true;
+            if (this.apool.getAttribKey(n) === 'author') {
+              const a = this.apool.getAttribValue(n);
+              if (a) {
+                authors.push(a);
+              }
+            }
           }
-        }
+        });
       }
-      return [...authorIds].sort();
+      authors.sort();
+      return authors;
     },
   };
 
@@ -160,8 +167,13 @@ const loadBroadcastJS = (socket, sendSocketMsg, fireWhenAllScriptsAreLoaded, Bro
       // some chars are replaced (no attributes change and no length change)
       // test if there are keep ops at the start of the cs
       if (lineChanged === undefined) {
-        const [op] = Changeset.deserializeOps(Changeset.unpack(changeset).ops);
-        lineChanged = op != null && op.opcode === '=' ? op.lines : 0;
+        lineChanged = 0;
+        const opIter = Changeset.opIterator(Changeset.unpack(changeset).ops);
+
+        if (opIter.hasNext()) {
+          const op = opIter.next();
+          if (op.opcode === '=') lineChanged += op.lines;
+        }
       }
 
       const goToLineNumber = (lineNumber) => {

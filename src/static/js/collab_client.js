@@ -207,11 +207,8 @@ const getCollabClient = (ace2editor, serverVars, initialUserInfo, options, _pad)
       });
     } else if (msg.type === 'ACCEPT_COMMIT') {
       serverMessageTaskQueue.enqueue(() => {
-        const {newRev} = msg;
-        // newRev will equal rev if the changeset has no net effect (identity changeset, removing
-        // and re-adding the same characters with the same attributes, or retransmission of an
-        // already applied changeset).
-        if (![rev, rev + 1].includes(newRev)) {
+        const newRev = msg.newRev;
+        if (newRev !== (rev + 1)) {
           window.console.warn(`bad message revision on ACCEPT_COMMIT: ${newRev} not ${rev + 1}`);
           // setChannelState("DISCONNECTED", "badmessage_acceptcommit");
           return;

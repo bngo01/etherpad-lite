@@ -1,11 +1,8 @@
 'use strict';
 
-const AttributePool = require('../../static/js/AttributePool');
 const apiHandler = require('../../node/handler/APIHandler');
-const assert = require('assert').strict;
 const io = require('socket.io-client');
 const log4js = require('log4js');
-const {padutils} = require('../../static/js/pad_utils');
 const process = require('process');
 const server = require('../../node/server');
 const setCookieParser = require('set-cookie-parser');
@@ -173,14 +170,14 @@ exports.connect = async (res = null) => {
  * @param {string} padId - Which pad to join.
  * @returns The CLIENT_VARS message from the server.
  */
-exports.handshake = async (socket, padId, token = padutils.generateAuthorToken()) => {
+exports.handshake = async (socket, padId) => {
   logger.debug('sending CLIENT_READY...');
   socket.send({
     component: 'pad',
     type: 'CLIENT_READY',
     padId,
     sessionID: null,
-    token,
+    token: 't.12345',
   });
   logger.debug('waiting for CLIENT_VARS response...');
   const msg = await exports.waitForSocketEvent(socket, 'message');
@@ -203,42 +200,6 @@ exports.sendMessage = async (socket, message) => await new Promise((resolve, rej
     resolve();
   });
 });
-
-/**
- * Convenience function to send a USER_CHANGES message. Waits for acknowledgement.
- */
-exports.sendUserChanges = async (socket, data) => await exports.sendMessage(socket, {
-  type: 'COLLABROOM',
-  component: 'pad',
-  data: {
-    type: 'USER_CHANGES',
-    apool: new AttributePool(),
-    ...data,
-  },
-});
-
-/**
- * Convenience function that waits for an ACCEPT_COMMIT message. Asserts that the new revision
- * matches the expected revision.
- *
- * Note: To avoid a race condition, this should be called before the USER_CHANGES message is sent.
- * For example:
- *
- *     await Promise.all([
- *       common.waitForAcceptCommit(socket, rev + 1),
- *       common.sendUserChanges(socket, {baseRev: rev, changeset}),
- *     ]);
- */
-exports.waitForAcceptCommit = async (socket, wantRev) => {
-  const msg = await exports.waitForSocketEvent(socket, 'message');
-  assert.deepEqual(msg, {
-    type: 'COLLABROOM',
-    data: {
-      type: 'ACCEPT_COMMIT',
-      newRev: wantRev,
-    },
-  });
-};
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz';
 

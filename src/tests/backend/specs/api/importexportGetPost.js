@@ -25,13 +25,6 @@ const apiVersion = 1;
 const testPadId = makeid();
 const testPadIdEnc = encodeURIComponent(testPadId);
 
-const deleteTestPad = async () => {
-  if (await padManager.doesPadExist(testPadId)) {
-    const pad = await padManager.getPad(testPadId);
-    await pad.remove();
-  }
-};
-
 describe(__filename, function () {
   this.timeout(45000);
   before(async function () { agent = await common.init(); });
@@ -335,7 +328,6 @@ describe(__filename, function () {
             },
             nextNum: 1,
           },
-          chatHead: 0,
           head: 0,
           savedRevisions: [],
         },
@@ -360,11 +352,6 @@ describe(__filename, function () {
             },
           },
         },
-        'pad:testing:chat:0': {
-          text: 'this is a test',
-          authorId: 'a.foo',
-          time: 1637966993265,
-        },
       });
 
       const importEtherpad = (records) => agent.post(`/p/${testPadId}/import`)
@@ -377,7 +364,6 @@ describe(__filename, function () {
         // makeGoodExport() is assumed to produce good .etherpad records. Verify that assumption so
         // that a buggy makeGoodExport() doesn't cause checks to accidentally pass.
         const records = makeGoodExport();
-        await deleteTestPad();
         await importEtherpad(records)
             .expect(200)
             .expect('Content-Type', /json/)
@@ -439,16 +425,17 @@ describe(__filename, function () {
         records['pad:testing'].atext.attribs = `*0${records['pad:testing'].atext.attribs}`;
         await importEtherpad(records).expect(500);
       });
-
-      it('missing chat message', async function () {
-        const records = makeGoodExport();
-        delete records['pad:testing:chat:0'];
-        await importEtherpad(records).expect(500);
-      });
     });
 
     describe('Import authorization checks', function () {
       let authorize;
+
+      const deleteTestPad = async () => {
+        if (await padManager.doesPadExist(testPadId)) {
+          const pad = await padManager.getPad(testPadId);
+          await pad.remove();
+        }
+      };
 
       const createTestPad = async (text) => {
         const pad = await padManager.getPad(testPadId);

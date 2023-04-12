@@ -29,8 +29,8 @@ const findSpecs = async (specDir) => {
   return specs;
 };
 
-exports.expressPreSession = async (hookName, {app}) => {
-  app.get('/tests/frontend/frontendTestSpecs.json', (req, res, next) => {
+exports.expressCreateServer = (hookName, args, cb) => {
+  args.app.get('/tests/frontend/frontendTestSpecs.json', (req, res, next) => {
     (async () => {
       const modules = [];
       await Promise.all(Object.entries(plugins.plugins).map(async ([plugin, def]) => {
@@ -59,14 +59,14 @@ exports.expressPreSession = async (hookName, {app}) => {
 
   const rootTestFolder = path.join(settings.root, 'src/tests/frontend/');
 
-  app.get('/tests/frontend/index.html', (req, res) => {
+  args.app.get('/tests/frontend/index.html', (req, res) => {
     res.redirect(['./', ...req.url.split('?').slice(1)].join('?'));
   });
 
   // The regexp /[\d\D]{0,}/ is equivalent to the regexp /.*/. The Express route path used here
   // uses the more verbose /[\d\D]{0,}/ pattern instead of /.*/ because path-to-regexp v0.1.7 (the
   // version used with Express v4.x) interprets '.' and '*' differently than regexp.
-  app.get('/tests/frontend/:file([\\d\\D]{0,})', (req, res, next) => {
+  args.app.get('/tests/frontend/:file([\\d\\D]{0,})', (req, res, next) => {
     (async () => {
       let file = sanitizePathname(req.params.file);
       if (['', '.', './'].includes(file)) file = 'index.html';
@@ -74,7 +74,9 @@ exports.expressPreSession = async (hookName, {app}) => {
     })().catch((err) => next(err || new Error(err)));
   });
 
-  app.get('/tests/frontend', (req, res) => {
+  args.app.get('/tests/frontend', (req, res) => {
     res.redirect(['./frontend/', ...req.url.split('?').slice(1)].join('?'));
   });
+
+  return cb();
 };

@@ -92,17 +92,6 @@ class AttributePool {
   }
 
   /**
-   * @returns {AttributePool} A deep copy of this attribute pool.
-   */
-  clone() {
-    const c = new AttributePool();
-    for (const [n, a] of Object.entries(this.numToAttrib)) c.numToAttrib[n] = [a[0], a[1]];
-    Object.assign(c.attribToNum, this.attribToNum);
-    c.nextNum = this.nextNum;
-    return c;
-  }
-
-  /**
    * Add an attribute to the attribute set, or query for an existing attribute identifier.
    *
    * @param {Attribute} attrib - The attribute's `[key, value]` pair of strings.
@@ -175,10 +164,7 @@ class AttributePool {
 
   /**
    * @returns {Jsonable} An object that can be passed to `fromJsonable` to reconstruct this
-   *     attribute pool. The returned object can be converted to JSON. WARNING: The returned object
-   *     has references to internal state (it is not a deep copy). Use the `clone()` method to copy
-   *     a pool -- do NOT do `new AttributePool().fromJsonable(pool.toJsonable())` to copy because
-   *     the resulting shared state will lead to pool corruption.
+   * attribute pool. The returned object can be converted to JSON.
    */
   toJsonable() {
     return {
@@ -191,10 +177,7 @@ class AttributePool {
    * Replace the contents of this attribute pool with values from a previous call to `toJsonable`.
    *
    * @param {Jsonable} obj - Object returned by `toJsonable` containing the attributes and their
-   *     identifiers. WARNING: This function takes ownership of the object (it does not make a deep
-   *     copy). Use the `clone()` method to copy a pool -- do NOT do
-   *     `new AttributePool().fromJsonable(pool.toJsonable())` to copy because the resulting shared
-   *     state will lead to pool corruption.
+   *     identifiers.
    */
   fromJsonable(obj) {
     this.numToAttrib = obj.numToAttrib;

@@ -165,12 +165,12 @@ exports.padOptions = {
   showChat: true,
   showLineNumbers: true,
   useMonospaceFont: false,
-  userName: null,
-  userColor: null,
+  userName: false,
+  userColor: false,
   rtl: false,
   alwaysShowChat: false,
   chatAndUsers: false,
-  lang: null,
+  lang: 'en-gb',
 };
 
 /**
@@ -322,8 +322,6 @@ exports.cookie = {
    * https://stackoverflow.com/q/41841880 for discussion.
    */
   sameSite: 'Lax',
-  sessionLifetime: 10 * 24 * 60 * 60 * 1000,
-  sessionRefreshInterval: 1 * 24 * 60 * 60 * 1000,
 };
 
 /*
