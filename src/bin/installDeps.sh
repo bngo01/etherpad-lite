@@ -36,14 +36,14 @@ if [ ! -f "$settings" ]; then
   cp settings.json.template "$settings" || exit 1
 fi
 
-log "Installing dependencies..."
-(
-  mkdir -p node_modules &&
-  cd node_modules &&
-  { [ -d ep_etherpad-lite ] || ln -sf ../src ep_etherpad-lite; } &&
-  cd ep_etherpad-lite &&
-  npm ci --no-optional
-) || exit 1
+log "NOT Installing dependencies..."
+#(
+#  mkdir -p node_modules &&
+#  cd node_modules &&
+#  { [ -d ep_etherpad-lite ] || ln -sf ../src ep_etherpad-lite; } &&
+#  cd ep_etherpad-lite &&
+#  npm ci --no-optional
+#) || exit 1
 
 # Remove all minified data to force node creating it new
 log "Clearing minified cache..."
