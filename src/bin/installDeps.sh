@@ -36,7 +36,7 @@ if [ ! -f "$settings" ]; then
   cp settings.json.template "$settings" || exit 1
 fi
 
-log "NOT Installing dependencies..."
+log "Installing dependencies..."
 (
   mkdir -p node_modules &&
   cd node_modules &&
